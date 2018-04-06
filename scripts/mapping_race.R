@@ -60,13 +60,13 @@ leaflet() %>%
   addTiles() %>%
   setView(lng = -95.7129, lat = 37.0902, zoom = 4) %>%
   addPolygons(data = df.shp,
-              layer = ~NAME,
+              label = ~NAME,
               group = "hover",
               fillColor = ~pal(perc_POC),
               fillOpacity = 0.5,
               weight = 1) %>%
   addPolygons(data = df.shp,
-              layer = ~NAME,
+              popup = ~NAME,
               group = "click",
               fillColor = ~pal(perc_POC),
               fillOpacity = 0.5,
