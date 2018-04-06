@@ -30,12 +30,18 @@ shp <- st_zm(shp) ## drop "Z" data
 
 ## append census race data to spatial data
 df.shp <- left_join(shp, df, by = "GEOID", copy = TRUE) %>%
-  dplyr::select(-moe, -variable, -NAME) %>%
+  dplyr::select(-moe, -variable) %>%
   rename(B03002_001 = estimate) %>%
   mutate(perc_POC = 1-(B03002_003/B03002_001)) %>%
-  st_as_sf() 
+  filter(grepl(c('^02'), GEOID) == FALSE,
+         grepl(c('^15'), GEOID) == FALSE,
+         grepl(c('^72'), GEOID) == FALSE) %>% # filter AK, HI, PR
+  st_as_sf() %>%
+  st_transform("+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 
+                          +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs") # Albers Equal Area
 
 ## plot
 tm_shape(df.shp) +
-  tm_polygons(fill = "perc_POC")
+  tm_polygons("perc_POC",
+              palette = "Purples")
 
