@@ -56,7 +56,7 @@ pal <- colorNumeric("Purples", df.shp$perc_POC)
 # use brewer.pal.info to get list of palettes
 # also see colorFactor(), colorBin(), colorQuantile()
 
-leaflet() %>%
+m <- leaflet() %>%
   addTiles() %>%
   setView(lng = -95.7129, lat = 37.0902, zoom = 4) %>%
   addPolygons(data = df.shp,
@@ -77,5 +77,8 @@ leaflet() %>%
             values = df.shp$perc_POC,
             title = "People of Color (%)")
 
+### exploring exporting as html file for offline exploration
+library(htmlwidgets)
+saveWidget(m, file="m.html")
 
 
