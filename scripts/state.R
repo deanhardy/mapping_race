@@ -13,12 +13,11 @@ library(sf)
 ## data import and prepping
 ##############################################################
 
-## define year for census data import
+## define year and region for census data import
 yr <- '2016'
-
-## define region for census import
-cnty <- c("Whatcom")
-
+cnty <- c("Jefferson")
+ST <- "Kentucky"
+  
 ## import race variables of interest
 race_vars <- c(white = "B03002_003E", black = "B03002_004E", 
                native_american = "B03002_005E", asian = "B03002_006E", 
@@ -28,7 +27,8 @@ race_vars <- c(white = "B03002_003E", black = "B03002_004E",
 ## import area of interest data
 aoi <- get_acs(geography = "block group", 
                variables = race_vars,
-               state = "WA",
+               state = ST,
+               county = cnty,
                year = yr) %>%
   dplyr::select(-moe, -NAME) %>%
   spread(key = "variable", value = "estimate")
@@ -36,8 +36,10 @@ aoi <- get_acs(geography = "block group",
 ## import spatial data for "cnty" region
 shp <- get_acs(geography = "block group", 
                variables = "B03002_001E",
-               state = "WA", 
-               year = yr, geometry = TRUE)
+               state = ST, 
+               county = cnty,
+               year = yr,
+               geometry = TRUE)
 shp <- st_zm(shp) ## drop "Z" data
 
 ## append census race data to spatial data
