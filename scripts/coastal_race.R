@@ -14,10 +14,11 @@ yr <- 2018
 datadir <- '/Users/dhardy/Dropbox/r_data/mapping-race'
 
 ## define variables of interest
+## https://data.census.gov/cedsci/table?q=race&d=ACS%201-Year%20Estimates%20Detailed%20Tables&tid=ACSDT1Y2019.B03002
 vars <- c(white = "B03002_003E", black = "B03002_004E", 
           native_american = "B03002_005E", asian = "B03002_006E", 
           hawaiian = "B03002_007E", other = "B03002_008E", 
-          multiracial = "B03002_009E", latinx = "B03002_012E")
+          multiracial = "B03002_009E", latinx = "B03002_012E", latinx_black = "B03002_014E")
 
 ## import list of coastal counties
 # cc <- st_read(file.path(datadir, "coastal-counties")) %>%
@@ -55,7 +56,8 @@ df.shp <- left_join(shp, df, by = "GEOID", copy = TRUE) %>%
   #                         +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs") # Albers Equal Area
 
 ## descriptive stats
-sum(df.shp$B03002_004)/sum(df.shp$B03002_001)
+##
+sum(df.shp$B03002_004 + df.shp$B03002_014)/sum(df.shp$B03002_001)
 ## 2018 5-yr ACS Black cont USA = 0.1236775
 ## 2009 5-yr ACS Black cont USA = 0.121677
 
@@ -66,13 +68,15 @@ cc.shp <- df.shp %>%
 cc.ga <- cc.shp %>%
   filter(str_detect(NAME, ".*Georgia"))
 
+## BIPOC coastal GA
 1 - sum(cc.ga$B03002_003)/sum(cc.ga$B03002_001)
 ## 2018 5-yr ACS POC fof GA = 0.4581245
 ## 2009 5-yr ACS POC fof GA = 0.4149089
 
-sum(cc.ga$B03002_004)/sum(cc.ga$B03002_001)
-## 2018 5-yr ACS Black fof GA = 0.3342913
-## 2009 5-yr ACS Black fof GA = 0.3405698
+## Black coastal GA
+sum(cc.ga$B03002_004 + cc.ga$B03002_014)/sum(cc.ga$B03002_001)
+## 2018 5-yr ACS Black fof GA = 0.3388784
+## 2009 5-yr ACS Black fof GA = 0.3427395
 
 cc.not <- cc %>%
   filter(!(GEOID %in% df.shp$GEOID))
