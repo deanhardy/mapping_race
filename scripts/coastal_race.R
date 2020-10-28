@@ -100,25 +100,56 @@ tm_shape(df.shp) +
   tm_polygons("perc_POC",
               palette = "Purples")
 
+
+#####################
+## Chatham County GA
+####################
+chatham <- get_acs(geography = "block group",
+                   state = 'Georgia',
+                   county = 'Chatham',
+                   variables = vars,
+                   year = yr) %>%
+  dplyr::select(-moe, -NAME) %>%
+  spread(key = "variable", value = "estimate")
+
+## import spatial data
+ch.shp <- get_acs(geography = "block group",
+               state = 'Georgia',
+               county = 'Chatham',
+               variables = "B03002_001E",
+               year = yr, geometry = TRUE)
+ch.shp <- st_zm(ch.shp) ## drop "Z" data
+
+## append census race data to spatial data
+ch.shp2 <- left_join(ch.shp, chatham, by = "GEOID", copy = TRUE) %>%
+  dplyr::select(-moe, -variable) %>%
+  rename(B03002_001 = estimate) %>%
+  mutate(perc_POC = 1-(B03002_003/B03002_001)) %>%
+  filter(grepl(c('^02'), GEOID) == FALSE,
+         grepl(c('^15'), GEOID) == FALSE,
+         grepl(c('^72'), GEOID) == FALSE) %>% # filter AK, HI, PR
+  st_as_sf() %>%
+  st_transform(4326)
+
 #####################
 ## build leaflet map
 ####################
 library(leaflet)
 
-pal <- colorNumeric("Purples", df.shp$perc_POC)
+pal <- colorNumeric("Purples", ch.shp2$perc_POC)
 # use brewer.pal.info to get list of palettes
 # also see colorFactor(), colorBin(), colorQuantile()
 
 m <- leaflet() %>%
   addTiles() %>%
   setView(lng = -95.7129, lat = 37.0902, zoom = 4) %>%
-  addPolygons(data = df.shp,
+  addPolygons(data = ch.shp2,
               label = ~NAME,
               group = "hover",
               fillColor = ~pal(perc_POC),
               fillOpacity = 0.5,
               weight = 1) %>%
-  addPolygons(data = df.shp,
+  addPolygons(data = ch.shp2,
               popup = ~NAME,
               group = "click",
               fillColor = ~pal(perc_POC),
@@ -127,8 +158,9 @@ m <- leaflet() %>%
   addLayersControl(baseGroups = c("hover", "click")) %>%
   addScaleBar() %>%
   addLegend(pal = pal,
-            values = df.shp$perc_POC,
+            values = ch.shp2$perc_POC,
             title = "People of Color (%)")
+m
 
 ### exploring exporting as html file for offline exploration
 library(htmlwidgets)
