@@ -5,10 +5,11 @@ library(tidyverse)
 library(tmap)
 library(sf)
 library(readxl)
+library(tigris)
 
 # census_api_key("") ## Already installed
 
-yr <- 2018
+yr <- 2021
 
 ## define data directory
 datadir <- '/Users/dhardy/Dropbox/r_data/mapping-race'
@@ -35,14 +36,13 @@ df <- get_acs(geography = "county",
   dplyr::select(-moe, -NAME) %>%
   spread(key = "variable", value = "estimate")
 
-## import spatial data
+## import county spatial data
 shp <- get_acs(geography = "county", 
                variables = "B03002_001E",
-               year = yr, geometry = TRUE,
-               shift_geo = T)
+               year = yr, geometry = TRUE)
 shp <- st_zm(shp) ## drop "Z" data
 
-## append census race data to spatial data
+## append census race data to county spatial data
 df.shp <- left_join(shp, df, by = "GEOID", copy = TRUE) %>%
   dplyr::select(-moe, -variable) %>%
   rename(B03002_001 = estimate) %>%
@@ -51,12 +51,46 @@ df.shp <- left_join(shp, df, by = "GEOID", copy = TRUE) %>%
          grepl(c('^15'), GEOID) == FALSE,
          grepl(c('^72'), GEOID) == FALSE) %>% # filter AK, HI, PR
   st_as_sf() %>%
-  st_transform(4326)
+  st_transform(4326) %>%
+  shift_geometry()
   # st_transform("+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 
   #                         +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs") # Albers Equal Area
 
+## import states spatial data
+st <- states(cb = TRUE, resolution = "500k", year = NULL) %>%
+  # filter(REGION != 9) %>%
+  filter(STATEFP < 60 & !NAME %in% c("Alaska", "Hawaii")) %>%
+  shift_geometry()
+
+# World2 <- data("World") %>%
+#   filter(iso_a3 != 'USA')
+fnt = 1.4
+## plot coastal counties
+tm_shape(st) +
+  tm_polygons() +
+# tm_shape(World) +
+#   tm_polygons() +
+tm_shape(st) +
+  tm_polygons(col = 'white') +
+tm_shape(cc.shp) +
+  tm_polygons("perc_POC",
+              palette = "Purples",
+              border.col = 'grey50',
+              lwd = 0.5,
+              title = 'People of Color (%)') + 
+tm_layout(bg.color = "skyblue", 
+          legend.text.size = fnt,
+          legend.title.size = fnt+0.5)
+
+## plot contiguous US
+tm_shape(df.shp) +
+  tm_polygons("perc_POC",
+              palette = "Purples")
+
+
+#####################
 ## descriptive stats
-##
+#####################
 sum(df.shp$B03002_004 + df.shp$B03002_014)/sum(df.shp$B03002_001)
 ## 2018 5-yr ACS Black cont USA = 0.1236775
 ## 2009 5-yr ACS Black cont USA = 0.121677
@@ -88,22 +122,11 @@ cc.not <- cc %>%
 ## 2009 5-yr ACS POC 0.4635508
 ## 2018 5-yr ACS POC 0.5141572
 
-## plot coastal counties
-# tm_shape(df.shp) +
-#   tm_polygons() + 
-tm_shape(cc.shp) +
-  tm_polygons("perc_POC",
-              palette = "Purples")
 
-## plot contiguous US
-tm_shape(df.shp) +
-  tm_polygons("perc_POC",
-              palette = "Purples")
-
-
-#####################
+########################
+## County specific ESDA
 ## Chatham County GA
-####################
+########################
 chatham <- get_acs(geography = "block group",
                    state = 'Georgia',
                    county = 'Chatham',
