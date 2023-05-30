@@ -56,20 +56,30 @@ df.shp <- left_join(shp, df, by = "GEOID", copy = TRUE) %>%
   # st_transform("+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 
   #                         +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs") # Albers Equal Area
 
+## filter to coastal counties
+cc.shp <- df.shp %>%
+  filter(GEOID %in% cc$GEOID)
+
 ## import states spatial data
 st <- states(cb = TRUE, resolution = "500k", year = NULL) %>%
   # filter(REGION != 9) %>%
   filter(STATEFP < 60 & !NAME %in% c("Alaska", "Hawaii")) %>%
   shift_geometry()
 
-# World2 <- data("World") %>%
-#   filter(iso_a3 != 'USA')
+## world countries
+## https://biostats-r.github.io/biostats/workingInR/140_maps.html
+# data("World")
+library(rnaturalearth)
+world <- ne_countries(scale = 50, returnclass = "sf") %>%
+  filter(sov_a3 %in% c('USA', 'CAN', 'MEX')) %>%
+  st_transform(5070)
 fnt = 1.4
+
 ## plot coastal counties
-tm_shape(st) +
+cc.map <- tm_shape(st) +
   tm_polygons() +
-# tm_shape(World) +
-#   tm_polygons() +
+tm_shape(world) +
+  tm_polygons() +
 tm_shape(st) +
   tm_polygons(col = 'white') +
 tm_shape(cc.shp) +
@@ -80,7 +90,27 @@ tm_shape(cc.shp) +
               title = 'People of Color (%)') + 
 tm_layout(bg.color = "skyblue", 
           legend.text.size = fnt,
-          legend.title.size = fnt+0.5)
+          legend.title.size = fnt+0.5,
+          frame.lwd = 0, 
+          outer.margins = c(0,0,0,0)) 
+# tm_compass() + tm_scale_bar()
+
+cc.map
+
+ggplot() + 
+  geom_sf(data = st) + 
+  geom_sf(data = world) +
+  geom_sf(data = st) + 
+  geom_sf(data = cc.shp, aes(fill = perc_POC)) + 
+  # coord_sf(xlim = c(120, 66), ylim = c(24, 50))
+  coord_sf(crs = st_crs(5070), xlim = c(-2500000, 2500000), 
+           ylim = c(-1300000, 100000))
+
+## export map
+png(file.path(datadir, 'figures/coastal-race-map.png'), res = 150, unit = 'in',
+    width = 13, height = 7)
+cc.map
+dev.off()
 
 ## plot contiguous US
 tm_shape(df.shp) +
@@ -94,10 +124,6 @@ tm_shape(df.shp) +
 sum(df.shp$B03002_004 + df.shp$B03002_014)/sum(df.shp$B03002_001)
 ## 2018 5-yr ACS Black cont USA = 0.1236775
 ## 2009 5-yr ACS Black cont USA = 0.121677
-
-
-cc.shp <- df.shp %>%
-  filter(GEOID %in% cc$GEOID)
 
 cc.ga <- cc.shp %>%
   filter(str_detect(NAME, ".*Georgia"))
