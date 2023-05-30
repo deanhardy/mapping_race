@@ -90,32 +90,32 @@ tm_shape(cc.shp) +
               title = 'People of Color (%)') + 
 tm_layout(bg.color = "skyblue", 
           legend.text.size = fnt,
-          legend.title.size = fnt+0.5,
+          legend.title.size = 1.2,
           frame.lwd = 0, 
-          outer.margins = c(0,0,0,0)) 
+          outer.margins = c(10,0,0,0)) 
 # tm_compass() + tm_scale_bar()
 
 cc.map
 
-ggplot() + 
-  geom_sf(data = st) + 
-  geom_sf(data = world) +
-  geom_sf(data = st) + 
-  geom_sf(data = cc.shp, aes(fill = perc_POC)) + 
-  # coord_sf(xlim = c(120, 66), ylim = c(24, 50))
-  coord_sf(crs = st_crs(5070), xlim = c(-2500000, 2500000), 
-           ylim = c(-1300000, 100000))
+# ggplot() + 
+#   geom_sf(data = st) + 
+#   geom_sf(data = world) +
+#   geom_sf(data = st) + 
+#   geom_sf(data = cc.shp, aes(fill = perc_POC)) + 
+#   # coord_sf(xlim = c(120, 66), ylim = c(24, 50))
+#   coord_sf(crs = st_crs(5070), xlim = c(-2500000, 2500000), 
+#            ylim = c(-1300000, 100000))
 
 ## export map
 png(file.path(datadir, 'figures/coastal-race-map.png'), res = 150, unit = 'in',
-    width = 13, height = 7)
+    width = 13.33, height = 7.5)
 cc.map
 dev.off()
 
 ## plot contiguous US
-tm_shape(df.shp) +
-  tm_polygons("perc_POC",
-              palette = "Purples")
+# tm_shape(df.shp) +
+#   tm_polygons("perc_POC",
+#               palette = "Purples")
 
 
 #####################
