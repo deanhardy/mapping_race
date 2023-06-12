@@ -75,6 +75,7 @@ world <- ne_countries(scale = 50, returnclass = "sf") %>%
   st_transform(5070)
 fnt = 1.4
 
+tmap_options(unit = 'mi')
 ## plot coastal counties
 cc.map <- tm_shape(st) +
   tm_polygons() +
@@ -87,15 +88,22 @@ tm_shape(cc.shp) +
               palette = "Purples",
               border.col = 'grey50',
               lwd = 0.5,
-              title = 'People of Color (%)') + 
+              title = 'BIPOC (%)') + 
 tm_layout(bg.color = "skyblue", 
           legend.text.size = fnt,
-          legend.title.size = 1.2,
+          legend.title.size = fnt,
           frame.lwd = 0, 
-          outer.margins = c(10,0,0,0)) 
-# tm_compass() + tm_scale_bar()
+          outer.margins = c(0,0,0,0)) +
+tm_compass(position = c(0.89, 0.1), size = 3) + 
+tm_scale_bar(breaks = c(0,100,200), text.size = fnt)
 
 cc.map
+
+## export map
+png(file.path(datadir, 'figures/coastal-race-map.png'), res = 150, unit = 'in',
+    width = 13.33, height = 7.5)
+cc.map
+dev.off()
 
 # ggplot() + 
 #   geom_sf(data = st) + 
@@ -106,12 +114,6 @@ cc.map
 #   coord_sf(crs = st_crs(5070), xlim = c(-2500000, 2500000), 
 #            ylim = c(-1300000, 100000))
 
-## export map
-png(file.path(datadir, 'figures/coastal-race-map.png'), res = 150, unit = 'in',
-    width = 13.33, height = 7.5)
-cc.map
-dev.off()
-
 ## plot contiguous US
 # tm_shape(df.shp) +
 #   tm_polygons("perc_POC",
@@ -121,12 +123,18 @@ dev.off()
 #####################
 ## descriptive stats
 #####################
+## National Black population
 sum(df.shp$B03002_004 + df.shp$B03002_014)/sum(df.shp$B03002_001)
 ## 2018 5-yr ACS Black cont USA = 0.1236775
 ## 2009 5-yr ACS Black cont USA = 0.121677
 
+## national BIPOC
+1 - sum(df.shp$B03002_003)/sum(df.shp$B03002_001) ## national BIPOC
+
 cc.ga <- cc.shp %>%
-  filter(str_detect(NAME, ".*Georgia"))
+  filter(str_detect(NAME, "Georgia"))
+cc.gulf <- cc.shp %>%
+  filter(str_detect(NAME, "Texas|Louisiana|Mississippi|Alabama|Florida"))
 
 ## BIPOC coastal GA
 1 - sum(cc.ga$B03002_003)/sum(cc.ga$B03002_001)
@@ -148,6 +156,13 @@ cc.not <- cc %>%
 ## 2009 5-yr ACS POC 0.4635508
 ## 2018 5-yr ACS POC 0.5141572
 
+## Gulf states
+cc.gulf <- cc.shp %>%
+  filter(str_detect(NAME, "Texas|Louisiana|Mississippi|Alabama|Florida")) %>%
+  filter(!str_detect(NAME, "Nassau|Duval|Johns|Flagler|Volusia|Brevard|Indian|Lucie|Martin|Palm|Broward|Miami"))
+
+## BIPOC Gulf coastal counties
+1 - sum(cc.gulf$B03002_003)/sum(cc.gulf$B03002_001)
 
 ########################
 ## County specific ESDA
